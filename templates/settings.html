@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Settings</h1>
+        <p class="subtitle">Configure your OmniStock application preferences.</p>
+    </div>
+</div>
+
+<div class="card form-container">
+    <h2>Appearance</h2>
+    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; padding-top: 20px; border-top: 1px solid var(--border); margin-top: 15px;">
+        <div>
+            <label style="font-size: 16px; margin-bottom: 4px;">Dark Mode</label>
+            <p class="text-muted" style="font-size: 13px;">Toggle the application theme between light and dark.</p>
+        </div>
+        <label class="switch">
+            <input type="checkbox" id="theme-toggle">
+            <span class="slider round"></span>
+        </label>
+    </div>
+</div>
+{% endblock %}

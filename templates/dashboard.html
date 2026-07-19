@@ -1,0 +1,165 @@
+{% extends "layout.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Analytics Overview</h1>
+        <p class="subtitle">Welcome back, here's what's happening with your inventory today.</p>
+    </div>
+    <div style="display: flex; gap: 12px;">
+        <a href="/export" class="btn btn-outline"><i class="fa-solid fa-download"></i> Export Report</a>
+        <a href="/add" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add Product</a>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon bg-blue"><i class="fa-solid fa-box"></i></div>
+        <div class="stat-info">
+            <h3>Total Products</h3>
+            <p>{{ stats.total_products }}</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon bg-green"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+        <div class="stat-info">
+            <h3>Total Value</h3>
+            <p>₹ {{ "{:,.2f}".format(stats.total_value) }}</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon bg-warning"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div class="stat-info">
+            <h3>Low Stock Alerts</h3>
+            <p>{{ stats.low_stock }} Items</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon bg-danger"><i class="fa-solid fa-circle-exclamation"></i></div>
+        <div class="stat-info">
+            <h3>Out of Stock</h3>
+            <p>{{ stats.out_of_stock }} Items</p>
+        </div>
+    </div>
+</div>
+
+<div class="dashboard-charts" style="grid-template-columns: 1fr 1fr;">
+    <div class="chart-card">
+        <h2>Inventory Value by Category</h2>
+        <div class="chart-container">
+            <canvas id="valueChart"></canvas>
+        </div>
+    </div>
+    <div class="chart-card">
+        <h2>Stock Quantity by Category</h2>
+        <div class="chart-container">
+            <canvas id="stockChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="recent-transactions card" style="margin-top: 24px;">
+    <div class="card-header">
+        <h2>Recent Transactions</h2>
+        <a href="#" class="view-all">View All</a>
+    </div>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Type</th>
+                    <th>Qty Changed</th>
+                    <th>Date & Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in transactions %}
+                <tr>
+                    <td><strong>{{ t[1] }}</strong></td>
+                    <td>
+                        <span class="badge {% if t[2] == 'ADD' %}badge-success{% else %}badge-warning{% endif %}">
+                            {{ t[2] }}
+                        </span>
+                    </td>
+                    <td>{{ t[3] }}</td>
+                    <td class="text-muted">{{ t[4].strftime('%b %d, %Y %I:%M %p') }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4" class="text-center text-muted">No transactions found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const categoryLabels = [
+        {% for cat in categories %}
+            "{{ cat[0] }}",
+        {% endfor %}
+    ];
+    const categoryData = [
+        {% for cat in categories %}
+            {{ cat[2] }},
+        {% endfor %}
+    ];
+    const categoryQty = [
+        {% for cat in categories %}
+            {{ cat[1] }},
+        {% endfor %}
+    ];
+    const bgColors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#14b8a6', '#f43f5e'];
+
+    const ctx = document.getElementById('valueChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: categoryLabels,
+            datasets: [{
+                data: categoryData,
+                backgroundColor: bgColors,
+                borderWidth: 0,
+                hoverOffset: 4,
+                cutout: '75%'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { 
+                    position: 'bottom', 
+                    labels: { color: '#a1a1aa', padding: 20, font: { family: 'Inter', size: 12 } } 
+                }
+            }
+        }
+    });
+
+    const ctx2 = document.getElementById('stockChart').getContext('2d');
+    new Chart(ctx2, {
+        type: 'bar',
+        data: {
+            labels: categoryLabels,
+            datasets: [{
+                label: 'Stock Quantity',
+                data: categoryQty,
+                backgroundColor: bgColors,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+</script>
+{% endblock %}

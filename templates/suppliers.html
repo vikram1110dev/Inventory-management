@@ -1,0 +1,38 @@
+{% extends "layout.html" %}
+{% block title %}Suppliers{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Suppliers</h1>
+        <p class="subtitle">Overview of all product suppliers in your inventory.</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Supplier Name</th>
+                    <th>Total Products</th>
+                    <th>Total Value (₹)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in suppliers %}
+                <tr>
+                    <td><strong>{{ row[0] }}</strong></td>
+                    <td>{{ row[1] }}</td>
+                    <td>₹{{ "{:,.2f}".format(row[2]) }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3" class="text-center text-muted">No suppliers found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

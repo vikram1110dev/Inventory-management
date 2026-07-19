@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Management System</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <header>
+
+        <h1>Inventory Management System</h1>
+
+        <div class="admin">
+            Admin
+        </div>
+
+    </header>
+
+    <main>
+
+        <section class="cards">
+
+            <div class="card">
+                <h3>Total Products</h3>
+                <p>{{ products|length }}</p>
+            </div>
+
+            <div class="card">
+                <h3>Total Quantity</h3>
+                <p>{{ products | sum(attribute='Quantity') }}</p>
+            </div>
+
+            <div class="card">
+                <h3>Low Stock</h3>
+                <p>
+                    {{ products | selectattr('Quantity','lt',10) | list | length }}
+                </p>
+            </div>
+
+        </section>
+
+        <section class="toolbar">
+
+            <input
+                type="text"
+                placeholder="Search Product">
+
+            <button
+                type="button"
+                onclick="window.location.href='/add'">
+                + Add Product
+            </button>
+
+        </section>
+
+        <section class="table-container">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Category</th>
+                        <th>Price</th>
+                        <th>Quantity</th>
+                        <th>Supplier</th>
+                        <th>Action</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for product in products %}
+
+                    <tr>
+
+                        <td>{{ product.ProductId }}</td>
+                        <td>{{ product.ProductName }}</td>
+                        <td>{{ product.Category }}</td>
+                        <td>₹ {{ product.Price }}</td>
+                        <td>{{ product.Quantity }}</td>
+                        <td>{{ product.Supplier }}</td>
+
+                        <td>
+
+                            <button
+                                type="button"
+                                onclick="window.location.href='/edit/{{ product.ProductId }}'">
+                                Edit
+                            </button>
+
+                            <button
+                                type="button"
+                                onclick="if(confirm('Delete this product?')) window.location.href='/delete/{{ product.ProductId }}'">
+                                Delete
+                            </button>
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </section>
+
+    </main>
+
+</body>
+
+</html>

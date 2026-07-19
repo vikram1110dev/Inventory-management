@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmniStock | {% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</head>
+<body>
+    <!-- Flash Messages -->
+    <div class="toast-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="toast toast-{{ category }}">
+                        <span>{{ message }}</span>
+                        <button class="toast-close" onclick="this.parentElement.remove();"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fa-solid fa-cube"></i> OmniStock</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="/" class="{% if request.path == '/' %}active{% endif %}"><i class="fa-solid fa-chart-pie"></i> Dashboard</a></li>
+                    <li><a href="/products" class="{% if request.path == '/products' or request.path == '/add' or '/edit' in request.path %}active{% endif %}"><i class="fa-solid fa-layer-group"></i> Inventory</a></li>
+                    <li><a href="/suppliers" class="{% if request.path == '/suppliers' %}active{% endif %}"><i class="fa-solid fa-users"></i> Suppliers</a></li>
+                    <li><a href="/categories" class="{% if request.path == '/categories' %}active{% endif %}"><i class="fa-solid fa-tags"></i> Categories</a></li>
+                    <li><a href="/settings" class="{% if request.path == '/settings' %}active{% endif %}"><i class="fa-solid fa-gear"></i> Settings</a></li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <p>&copy; 2026 OmniStock Inc.</p>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="topbar">
+                <div class="search-bar">
+                    <form action="/products" method="GET" style="display: flex; width: 100%; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" name="q" placeholder="Search inventory..." value="{{ request.args.get('q', '') }}">
+                    </form>
+                </div>
+                <div class="user-profile">
+                    <div class="notification-bell" id="notifBtn" style="position: relative; cursor: pointer;">
+                        <i class="fa-regular fa-bell"></i>
+                        {% if notifications %}
+                        <span class="badge-dot"></span>
+                        {% endif %}
+                        
+                        <!-- Notification Dropdown -->
+                        <div id="notifDropdown" style="display: none; position: absolute; right: -10px; top: 35px; width: 260px; background: var(--card-bg); box-shadow: var(--shadow-hover); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; z-index: 1000; text-align: left;">
+                            <h4 style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border); font-size: 14px;">Notifications</h4>
+                            <div style="display: flex; flex-direction: column; gap: 12px; max-height: 300px; overflow-y: auto;">
+                                {% if notifications %}
+                                    {% for notif in notifications %}
+                                    <div style="display: flex; gap: 12px; align-items: start;">
+                                        <div style="background: {% if notif.type == 'danger' %}rgba(239, 68, 68, 0.1){% else %}rgba(245, 158, 11, 0.1){% endif %}; color: {% if notif.type == 'danger' %}var(--danger){% else %}var(--warning){% endif %}; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                            <i class="fa-solid fa-triangle-exclamation"></i>
+                                        </div>
+                                        <div>
+                                            <p style="font-size: 13px; font-weight: 500; margin-bottom: 2px;">{{ notif.title }}</p>
+                                            <p style="font-size: 12px; color: var(--text-muted);">{{ notif.message }}</p>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p style="font-size: 13px; color: var(--text-muted); margin: 0;">No new notifications</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <script>
+                        document.addEventListener("DOMContentLoaded", function() {
+                            const notifBtn = document.getElementById('notifBtn');
+                            const notifDropdown = document.getElementById('notifDropdown');
+                            
+                            if (notifBtn && notifDropdown) {
+                                notifBtn.addEventListener('click', function(e) {
+                                    e.stopPropagation();
+                                    notifDropdown.style.display = notifDropdown.style.display === 'none' ? 'block' : 'none';
+                                });
+                                
+                                document.addEventListener('click', function() {
+                                    notifDropdown.style.display = 'none';
+                                });
+                                
+                                notifDropdown.addEventListener('click', function(e) {
+                                    e.stopPropagation();
+                                });
+                            }
+                        });
+                    </script>
+                    <img src="https://ui-avatars.com/api/?name=Admin+User&background=3b82f6&color=fff" alt="User">
+                    <span>Admin</span>
+                </div>
+            </header>
+            
+            <div class="content-area">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+</body>
+</html>

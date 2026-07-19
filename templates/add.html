@@ -1,0 +1,56 @@
+{% extends "layout.html" %}
+{% block title %}Add Product{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Add New Product</h1>
+        <p class="subtitle">Fill in the details to add a new product to your inventory.</p>
+    </div>
+    <a href="/products" class="btn btn-outline"><i class="fa-solid fa-arrow-left"></i> Back to Inventory</a>
+</div>
+
+<div class="form-container card">
+    <form action="/add" method="POST">
+        <div class="form-grid">
+            <div class="form-group full-width">
+                <label for="product_id">Product ID (Optional - to reuse a deleted ID)</label>
+                <input type="number" id="product_id" name="product_id" class="form-input" placeholder="Leave empty for auto-generated ID">
+            </div>
+            
+            <div class="form-group">
+                <label for="product_name">Product Name</label>
+                <input type="text" id="product_name" name="product_name" class="form-input" required placeholder="e.g. MacBook Pro">
+            </div>
+            
+            <div class="form-group">
+                <label for="category">Category</label>
+                <input type="text" id="category" name="category" class="form-input" required placeholder="e.g. Electronics">
+            </div>
+            
+            <div class="form-group">
+                <label for="price">Price (₹)</label>
+                <div class="input-with-icon">
+                    <i class="fa-solid fa-indian-rupee-sign"></i>
+                    <input type="number" id="price" name="price" step="0.01" class="form-input" required placeholder="0.00">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="quantity">Initial Quantity</label>
+                <input type="number" id="quantity" name="quantity" class="form-input" required placeholder="0">
+            </div>
+            
+            <div class="form-group full-width">
+                <label for="supplier">Supplier Name</label>
+                <input type="text" id="supplier" name="supplier" class="form-input" required placeholder="e.g. Apple Inc.">
+            </div>
+        </div>
+        
+        <div class="form-actions">
+            <a href="/products" class="btn btn-outline">Cancel</a>
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Save Product</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
