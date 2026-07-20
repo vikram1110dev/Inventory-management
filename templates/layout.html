@@ -115,5 +115,30 @@
             </div>
         </main>
     </div>
+
+    <!-- AI Chatbot Widget -->
+    <div class="chatbot-widget">
+        <button id="chatbot-toggle" class="chatbot-toggle-btn">
+            <i class="fa-solid fa-robot"></i>
+        </button>
+        <div id="chatbot-window" class="chatbot-window" style="display: none;">
+            <div class="chatbot-header">
+                <h3><i class="fa-solid fa-sparkles"></i> Omni AI</h3>
+                <button id="chatbot-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="chatbot-messages" id="chatbot-messages">
+                <div class="message ai-message">
+                    Hello! I'm your OmniStock AI assistant. You can ask me about inventory, low stock alerts, or recent transactions.
+                </div>
+            </div>
+            <div class="chatbot-input">
+                <input type="text" id="chatbot-input-field" placeholder="Ask about products, alerts...">
+                <button id="chatbot-send-btn"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Marked.js for markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </body>
 </html>

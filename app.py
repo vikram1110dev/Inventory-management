@@ -1,7 +1,12 @@
-from flask import Flask, render_template, request, redirect, Response, flash
+from flask import Flask, render_template, request, redirect, Response, flash, jsonify
 import pyodbc
 import csv
 from io import StringIO
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 from db import (
     get_all_products,
@@ -14,6 +19,9 @@ from db import (
     get_all_categories,
     get_all_suppliers
 )
+from google import genai
+from google.genai import types
+
 
 app = Flask(__name__)
 app.secret_key = 'omnistock_super_secret_key_2026'
@@ -131,6 +139,86 @@ def export_data():
         mimetype="text/csv",
         headers={"Content-Disposition": "attachment;filename=inventory_report.csv"}
     )
+
+
+@app.route("/api/chat", methods=["POST"])
+def chat_api():
+    try:
+        data = request.get_json()
+        user_message = data.get("message", "")
+        
+        if not user_message:
+            return jsonify({"error": "Empty message"}), 400
+            
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            return jsonify({"response": "I cannot answer right now as the GEMINI_API_KEY is not configured."})
+
+        # --- RAG: Retrieve context from database ---
+        # 1. Products & Alerts
+        products = get_all_products()
+        inventory_list = []
+        low_stock_alerts = []
+        for p in products:
+            qty = p[4]
+            product_str = f"ID: {p[0]}, Name: {p[1]}, Category: {p[2]}, Price: ${p[3]:.2f}, Quantity: {qty}, Supplier: {p[5]}"
+            inventory_list.append(product_str)
+            if qty < 10:
+                alert_type = "OUT OF STOCK" if qty == 0 else "LOW STOCK"
+                low_stock_alerts.append(f"[{alert_type}] {p[1]} (Qty: {qty})")
+
+        # 2. History (Recent Transactions)
+        transactions = get_recent_transactions()
+        history_list = []
+        for t in transactions:
+            # t: TransactionId, ProductName, TransactionType, QuantityChanged, TransactionDate
+            history_list.append(f"Date: {t[4]}, Product: {t[1]}, Type: {t[2]}, Qty Change: {t[3]}")
+            
+        # 3. Stats
+        stats = get_dashboard_stats()
+        
+        context = f"""
+INVENTORY DATA CONTEXT:
+---
+Total Products: {stats['total_products']}
+Total Inventory Value: ${stats['total_value']:.2f}
+
+ALERTS (Low Stock):
+{chr(10).join(low_stock_alerts) if low_stock_alerts else "None"}
+
+INVENTORY LIST:
+{chr(10).join(inventory_list)}
+
+RECENT TRANSACTION HISTORY:
+{chr(10).join(history_list)}
+---
+"""
+        system_instruction = (
+            "You are an AI assistant for the OmniStock Inventory Management System. "
+            "Your job is to answer user queries accurately based ONLY on the provided INVENTORY DATA CONTEXT. "
+            "Keep your answers concise, helpful, and professional. "
+            "If the user asks about products, alerts, or history, refer to the provided context. "
+            "Do not make up information that is not in the context. "
+            "Format your response using Markdown for readability (e.g., bullet points for lists)."
+        )
+
+        client = genai.Client(api_key=api_key)
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=[context, f"User Query: {user_message}"],
+            config=types.GenerateContentConfig(
+                system_instruction=system_instruction,
+                temperature=0.2,
+            )
+        )
+        
+        return jsonify({"response": response.text})
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
 
 
 if __name__ == "__main__":
