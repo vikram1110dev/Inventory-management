@@ -17,7 +17,8 @@ from db import (
     get_dashboard_stats,
     get_recent_transactions,
     get_all_categories,
-    get_all_suppliers
+    get_all_suppliers,
+    get_all_transactions
 )
 from google import genai
 from google.genai import types
@@ -118,6 +119,13 @@ def suppliers_page():
     return render_template("suppliers.html", suppliers=suppliers)
 
 
+@app.route("/history")
+def history_page():
+    query = request.args.get("q")
+    transactions = get_all_transactions(query)
+    return render_template("history.html", transactions=transactions)
+
+
 @app.route("/settings")
 def settings_page():
     return render_template("settings.html")
@@ -150,9 +158,10 @@ def chat_api():
         if not user_message:
             return jsonify({"error": "Empty message"}), 400
             
+        load_dotenv(override=True)
         api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            return jsonify({"response": "I cannot answer right now as the GEMINI_API_KEY is not configured."})
+        if not api_key or api_key.strip() in ["", "your_api_key_here"]:
+            return jsonify({"response": "⚠️ **GEMINI_API_KEY is not configured.**\n\nPlease update your `.env` file with a valid Google Gemini API Key:\n`GEMINI_API_KEY=your_actual_key_here`"})
 
         # --- RAG: Retrieve context from database ---
         # 1. Products & Alerts
@@ -202,9 +211,10 @@ RECENT TRANSACTION HISTORY:
             "Format your response using Markdown for readability (e.g., bullet points for lists)."
         )
 
+        model_name = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
         client = genai.Client(api_key=api_key)
         response = client.models.generate_content(
-            model='gemini-2.5-flash',
+            model=model_name,
             contents=[context, f"User Query: {user_message}"],
             config=types.GenerateContentConfig(
                 system_instruction=system_instruction,
@@ -217,7 +227,11 @@ RECENT TRANSACTION HISTORY:
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
+        error_str = str(e)
+        if "API_KEY_INVALID" in error_str or "API key not valid" in error_str:
+            return jsonify({"response": "⚠️ **Invalid API Key.**\n\nPlease enter a valid Google Gemini API Key in your `.env` file (`GEMINI_API_KEY=...`)."})
+        return jsonify({"response": f"⚠️ **Error:** {error_str}"})
+
 
 
 

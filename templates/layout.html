@@ -37,6 +37,7 @@
                     <li><a href="/products" class="{% if request.path == '/products' or request.path == '/add' or '/edit' in request.path %}active{% endif %}"><i class="fa-solid fa-layer-group"></i> Inventory</a></li>
                     <li><a href="/suppliers" class="{% if request.path == '/suppliers' %}active{% endif %}"><i class="fa-solid fa-users"></i> Suppliers</a></li>
                     <li><a href="/categories" class="{% if request.path == '/categories' %}active{% endif %}"><i class="fa-solid fa-tags"></i> Categories</a></li>
+                    <li><a href="/history" class="{% if request.path == '/history' %}active{% endif %}"><i class="fa-solid fa-clock-rotate-left"></i> History</a></li>
                     <li><a href="/settings" class="{% if request.path == '/settings' %}active{% endif %}"><i class="fa-solid fa-gear"></i> Settings</a></li>
                 </ul>
             </nav>

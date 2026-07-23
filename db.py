@@ -183,6 +183,30 @@ def get_recent_transactions():
     return rows
 
 
+def get_all_transactions(search_query=None):
+    conn = get_connection()
+    cursor = conn.cursor()
+    if search_query:
+        search_term = f"%{search_query}%"
+        cursor.execute("""
+            SELECT t.TransactionId, p.ProductName, t.TransactionType, t.QuantityChanged, t.TransactionDate
+            FROM Transactions t
+            JOIN Products p ON t.ProductId = p.ProductId
+            WHERE p.ProductName LIKE ? OR t.TransactionType LIKE ?
+            ORDER BY t.TransactionDate DESC
+        """, (search_term, search_term))
+    else:
+        cursor.execute("""
+            SELECT t.TransactionId, p.ProductName, t.TransactionType, t.QuantityChanged, t.TransactionDate
+            FROM Transactions t
+            JOIN Products p ON t.ProductId = p.ProductId
+            ORDER BY t.TransactionDate DESC
+        """)
+    rows = cursor.fetchall()
+    conn.close()
+    return rows
+
+
 def get_all_categories():
     conn = get_connection()
     cursor = conn.cursor()

@@ -1,0 +1,122 @@
+{% extends "layout.html" %}
+{% block title %}Inventory History{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Inventory History</h1>
+        <p class="subtitle">Complete audit log of all inventory additions, updates, and stock movements.</p>
+    </div>
+    <div style="display: flex; gap: 12px;">
+        <button onclick="window.print()" class="btn btn-outline"><i class="fa-solid fa-print"></i> Print Log</button>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <div class="search-box">
+            <i class="fa-solid fa-search"></i>
+            <input type="text" id="historySearch" placeholder="Search product or transaction type...">
+        </div>
+        <div class="filters">
+            <select id="typeFilter" class="form-input" style="width: auto;">
+                <option value="">All Transaction Types</option>
+                <option value="ADD">ADD</option>
+                <option value="UPDATE">UPDATE</option>
+            </select>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="data-table" id="historyTable">
+            <thead>
+                <tr>
+                    <th>Txn ID</th>
+                    <th>Product Name</th>
+                    <th>Type</th>
+                    <th>Qty Changed</th>
+                    <th>Date & Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in transactions %}
+                <tr>
+                    <td>#{{ t[0] }}</td>
+                    <td><strong>{{ t[1] }}</strong></td>
+                    <td>
+                        {% if t[2] == 'ADD' %}
+                            <span class="status active">ADD</span>
+                        {% else %}
+                            <span class="status warning">UPDATE</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if t[3] > 0 %}
+                            <span style="color: var(--success); font-weight: 600;">+{{ t[3] }}</span>
+                        {% elif t[3] < 0 %}
+                            <span style="color: var(--danger); font-weight: 600;">{{ t[3] }}</span>
+                        {% else %}
+                            <span>{{ t[3] }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-muted">
+                        {% if t[4] %}
+                            {{ t[4].strftime('%b %d, %Y %I:%M %p') }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center text-muted">No inventory transactions found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer pagination-footer">
+        <p class="text-muted" id="historyCount">Showing {{ transactions|length }} transactions</p>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const searchInput = document.getElementById("historySearch");
+    const typeFilter = document.getElementById("typeFilter");
+    const table = document.getElementById("historyTable");
+    const tbody = table.querySelector("tbody");
+    const rows = Array.from(tbody.querySelectorAll("tr"));
+    const historyCount = document.getElementById("historyCount");
+
+    function filterHistory() {
+        const query = searchInput.value.toLowerCase();
+        const selectedType = typeFilter.value.toLowerCase();
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            if (row.cells.length < 2) return; // skip empty state
+
+            const text = row.innerText.toLowerCase();
+            const typeText = row.cells[2].innerText.trim().toLowerCase();
+
+            const matchesQuery = text.includes(query);
+            const matchesType = !selectedType || typeText === selectedType;
+
+            if (matchesQuery && matchesType) {
+                row.style.display = "";
+                visibleCount++;
+            } else {
+                row.style.display = "none";
+            }
+        });
+
+        if (historyCount) {
+            historyCount.innerText = `Showing ${visibleCount} transactions`;
+        }
+    }
+
+    if (searchInput) searchInput.addEventListener("input", filterHistory);
+    if (typeFilter) typeFilter.addEventListener("change", filterHistory);
+});
+</script>
+{% endblock %}
