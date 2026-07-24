@@ -752,3 +752,93 @@ input:checked + .slider:before { transform: translateX(26px); }
     0%, 80%, 100% { transform: scale(0); }
     40% { transform: scale(1); }
 }
+
+/* Floating AI Predictions Widget Styles (Left Side) */
+.ai-widget-container {
+    position: fixed;
+    bottom: 32px;
+    left: 32px;
+    z-index: 1000;
+}
+
+.ai-widget-toggle-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    color: white;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 4px 18px rgba(99, 102, 241, 0.45);
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ai-widget-toggle-btn:hover {
+    transform: scale(1.08) translateY(-4px);
+    box-shadow: 0 8px 28px rgba(168, 85, 247, 0.55);
+}
+
+.ai-widget-window {
+    position: absolute;
+    bottom: 76px;
+    left: 0;
+    width: 390px;
+    max-height: 560px;
+    background: var(--card-bg);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 1001;
+}
+
+.ai-widget-header {
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ai-widget-header h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ai-widget-header button {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.ai-widget-header button:hover {
+    background: rgba(255, 255, 255, 0.35);
+}
+
+.ai-widget-body {
+    padding: 16px;
+    overflow-y: auto;
+    max-height: 440px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}

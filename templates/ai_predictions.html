@@ -1,0 +1,189 @@
+{% extends "layout.html" %}
+{% block title %}AI Demand Predictions{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 style="display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-wand-magic-sparkles" style="color: #6366f1;"></i> AI Demand Predictions & Insights
+        </h1>
+        <p class="subtitle">AI-driven stockout risk forecasting, demand velocity analytics, and reorder suggestions.</p>
+    </div>
+    <div>
+        <button id="pageRefreshAiBtn" class="btn btn-primary" onclick="fetchPageAiInsights()" style="background: linear-gradient(135deg, #6366f1, #a855f7); border: none;">
+            <i class="fa-solid fa-rotate" id="pageRefreshAiIcon"></i> Refresh AI Analysis
+        </button>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card" style="border-left: 4px solid #ef4444;">
+        <div class="stat-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div class="stat-info">
+            <h3>High Risk Products</h3>
+            <p id="highRiskCount">
+                {% set high_count = namespace(value=0) %}
+                {% if ai_predictions and ai_predictions.stockout_predictions %}
+                    {% for p in ai_predictions.stockout_predictions %}
+                        {% if p.risk_level == 'High' %}{% set high_count.value = high_count.value + 1 %}{% endif %}
+                    {% endfor %}
+                {% endif %}
+                {{ high_count.value }} Items
+            </p>
+        </div>
+    </div>
+    <div class="stat-card" style="border-left: 4px solid #f59e0b;">
+        <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;"><i class="fa-solid fa-clock"></i></div>
+        <div class="stat-info">
+            <h3>Medium Risk Items</h3>
+            <p id="medRiskCount">
+                {% set med_count = namespace(value=0) %}
+                {% if ai_predictions and ai_predictions.stockout_predictions %}
+                    {% for p in ai_predictions.stockout_predictions %}
+                        {% if p.risk_level == 'Medium' %}{% set med_count.value = med_count.value + 1 %}{% endif %}
+                    {% endfor %}
+                {% endif %}
+                {{ med_count.value }} Items
+            </p>
+        </div>
+    </div>
+    <div class="stat-card" style="border-left: 4px solid #3b82f6;">
+        <div class="stat-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;"><i class="fa-solid fa-lightbulb"></i></div>
+        <div class="stat-info">
+            <h3>Active Suggestions</h3>
+            <p id="suggestionCount">{{ ai_predictions.smart_suggestions|length if ai_predictions and ai_predictions.smart_suggestions else 0 }} Insights</p>
+        </div>
+    </div>
+    <div class="stat-card" style="border-left: 4px solid #10b981;">
+        <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;"><i class="fa-solid fa-circle-check"></i></div>
+        <div class="stat-info">
+            <h3>AI Engine Status</h3>
+            <p style="color: #10b981; font-weight: 600;">Active</p>
+        </div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px;">
+    <!-- Detailed Predictions Table -->
+    <div class="card" style="padding: 24px;">
+        <div class="card-header" style="margin-bottom: 16px;">
+            <h2><i class="fa-solid fa-crystal-ball" style="color: #8b5cf6;"></i> Stockout Risk Forecast</h2>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Product & Category</th>
+                        <th>Current Qty</th>
+                        <th>Risk Level</th>
+                        <th>Est. Days Left</th>
+                        <th>Suggested Reorder</th>
+                    </tr>
+                </thead>
+                <tbody id="pagePredictionsTbody">
+                    {% if ai_predictions and ai_predictions.stockout_predictions %}
+                        {% for p in ai_predictions.stockout_predictions %}
+                        <tr>
+                            <td>
+                                <strong>{{ p.product_name }}</strong>
+                                <div style="font-size: 11px; color: var(--text-muted);">{{ p.category }}</div>
+                            </td>
+                            <td><strong>{{ p.current_qty }}</strong></td>
+                            <td>
+                                <span class="badge {% if p.risk_level == 'High' %}badge-danger{% elif p.risk_level == 'Medium' %}badge-warning{% else %}badge-success{% endif %}">
+                                    {{ p.risk_level }}
+                                </span>
+                            </td>
+                            <td>{{ p.predicted_days_left }} days</td>
+                            <td><strong style="color: #6366f1;">+{{ p.suggested_reorder_qty }} units</strong></td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr><td colspan="5" class="text-center text-muted">No stockout risk predictions available.</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Detailed Smart Suggestions List -->
+    <div class="card" style="padding: 24px;">
+        <div class="card-header" style="margin-bottom: 16px;">
+            <h2><i class="fa-solid fa-lightbulb" style="color: #f59e0b;"></i> Smart Reorder & Optimization Recommendations</h2>
+        </div>
+        <div id="pageSuggestionsList" style="display: flex; flex-direction: column; gap: 14px; max-height: 480px; overflow-y: auto;">
+            {% if ai_predictions and ai_predictions.smart_suggestions %}
+                {% for s in ai_predictions.smart_suggestions %}
+                <div style="display: flex; gap: 14px; align-items: flex-start; padding: 14px; background: rgba(0,0,0,0.02); border-radius: 10px; border: 1px solid var(--border);">
+                    <div style="background: {% if s.badge_color == 'danger' %}rgba(239,68,68,0.15){% elif s.badge_color == 'warning' %}rgba(245,158,11,0.15){% elif s.badge_color == 'info' %}rgba(59,130,246,0.15){% else %}rgba(16,185,129,0.15){% endif %}; color: {% if s.badge_color == 'danger' %}#ef4444{% elif s.badge_color == 'warning' %}#f59e0b{% elif s.badge_color == 'info' %}#3b82f6{% else %}#10b981{% endif %}; width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px;">
+                        <i class="fa-solid {{ s.icon if s.icon else 'fa-lightbulb' }}"></i>
+                    </div>
+                    <div>
+                        <strong style="font-size: 14px; display: block; margin-bottom: 4px;">{{ s.title }}</strong>
+                        <p style="font-size: 13px; color: var(--text-muted); margin: 0; line-height: 1.5;">{{ s.description }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p style="color: var(--text-muted); font-size: 13px;">No suggestions available right now.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+async function fetchPageAiInsights() {
+    const icon = document.getElementById('pageRefreshAiIcon');
+    const btn = document.getElementById('pageRefreshAiBtn');
+    if (icon) icon.classList.add('fa-spin');
+    if (btn) btn.disabled = true;
+
+    try {
+        const res = await fetch('/api/ai-predictions');
+        const data = await res.json();
+        
+        const tbody = document.getElementById('pagePredictionsTbody');
+        if (tbody && data.stockout_predictions) {
+            tbody.innerHTML = data.stockout_predictions.map(p => {
+                const badgeClass = p.risk_level === 'High' ? 'badge-danger' : (p.risk_level === 'Medium' ? 'badge-warning' : 'badge-success');
+                return `
+                <tr>
+                    <td>
+                        <strong>${p.product_name}</strong>
+                        <div style="font-size: 11px; color: var(--text-muted);">${p.category}</div>
+                    </td>
+                    <td><strong>${p.current_qty}</strong></td>
+                    <td><span class="badge ${badgeClass}">${p.risk_level}</span></td>
+                    <td>${p.predicted_days_left} days</td>
+                    <td><strong style="color: #6366f1;">+${p.suggested_reorder_qty} units</strong></td>
+                </tr>`;
+            }).join('');
+        }
+
+        const suggList = document.getElementById('pageSuggestionsList');
+        if (suggList && data.smart_suggestions) {
+            suggList.innerHTML = data.smart_suggestions.map(s => {
+                const color = s.badge_color === 'danger' ? '#ef4444' : (s.badge_color === 'warning' ? '#f59e0b' : (s.badge_color === 'info' ? '#3b82f6' : '#10b981'));
+                const bgColor = s.badge_color === 'danger' ? 'rgba(239,68,68,0.15)' : (s.badge_color === 'warning' ? 'rgba(245,158,11,0.15)' : (s.badge_color === 'info' ? 'rgba(59,130,246,0.15)' : 'rgba(16,185,129,0.15)'));
+                const iconClass = s.icon || 'fa-lightbulb';
+                return `
+                <div style="display: flex; gap: 14px; align-items: flex-start; padding: 14px; background: rgba(0,0,0,0.02); border-radius: 10px; border: 1px solid var(--border);">
+                    <div style="background: ${bgColor}; color: ${color}; width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px;">
+                        <i class="fa-solid ${iconClass}"></i>
+                    </div>
+                    <div>
+                        <strong style="font-size: 14px; display: block; margin-bottom: 4px;">${s.title}</strong>
+                        <p style="font-size: 13px; color: var(--text-muted); margin: 0; line-height: 1.5;">${s.description}</p>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+    } catch(e) {
+        console.error("Error refreshing AI page insights:", e);
+    } finally {
+        if (icon) icon.classList.remove('fa-spin');
+        if (btn) btn.disabled = false;
+    }
+}
+</script>
+{% endblock %}

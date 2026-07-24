@@ -35,6 +35,7 @@
                 <ul>
                     <li><a href="/" class="{% if request.path == '/' %}active{% endif %}"><i class="fa-solid fa-chart-pie"></i> Dashboard</a></li>
                     <li><a href="/products" class="{% if request.path == '/products' or request.path == '/add' or '/edit' in request.path %}active{% endif %}"><i class="fa-solid fa-layer-group"></i> Inventory</a></li>
+                    <li><a href="/ai-predictions" class="{% if request.path == '/ai-predictions' %}active{% endif %}"><i class="fa-solid fa-wand-magic-sparkles"></i> AI Predictions</a></li>
                     <li><a href="/suppliers" class="{% if request.path == '/suppliers' %}active{% endif %}"><i class="fa-solid fa-users"></i> Suppliers</a></li>
                     <li><a href="/categories" class="{% if request.path == '/categories' %}active{% endif %}"><i class="fa-solid fa-tags"></i> Categories</a></li>
                     <li><a href="/history" class="{% if request.path == '/history' %}active{% endif %}"><i class="fa-solid fa-clock-rotate-left"></i> History</a></li>
@@ -115,6 +116,33 @@
                 {% block content %}{% endblock %}
             </div>
         </main>
+    </div>
+
+    <!-- Floating AI Predictions Overlapping Widget (Left Side) -->
+    <div class="ai-widget-container">
+        <button id="ai-widget-toggle" class="ai-widget-toggle-btn" title="AI Predictions & Suggestions">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+        </button>
+        <div id="ai-widget-window" class="ai-widget-window" style="display: none;">
+            <div class="ai-widget-header">
+                <h3><i class="fa-solid fa-wand-magic-sparkles"></i> AI Predictions & Insights</h3>
+                <div style="display: flex; gap: 8px;">
+                    <button id="ai-widget-refresh" title="Refresh Insights"><i class="fa-solid fa-rotate" id="ai-widget-refresh-icon"></i></button>
+                    <button id="ai-widget-close" title="Close"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+            <div class="ai-widget-body" id="ai-widget-body">
+                <div style="text-align: center; padding: 20px; color: var(--text-muted);">
+                    <i class="fa-solid fa-spinner fa-spin" style="font-size: 24px; color: #6366f1;"></i>
+                    <p style="margin-top: 8px; font-size: 13px;">Loading AI Insights...</p>
+                </div>
+            </div>
+            <div class="ai-widget-footer" style="padding: 12px 16px; border-top: 1px solid var(--border);">
+                <a href="/ai-predictions" class="btn btn-outline btn-sm" style="width: 100%; text-align: center; text-decoration: none; justify-content: center; border-color: rgba(99, 102, 241, 0.3); color: #6366f1; font-weight: 600;">
+                    View Full Predictions Page <i class="fa-solid fa-arrow-right" style="margin-left: 6px;"></i>
+                </a>
+            </div>
+        </div>
     </div>
 
     <!-- AI Chatbot Widget -->

@@ -203,6 +203,13 @@ def api_ai_predictions():
     return jsonify(data)
 
 
+@app.route("/ai-predictions")
+def ai_predictions_page():
+    ai_predictions = get_ai_predictions_data()
+    return render_template("ai_predictions.html", ai_predictions=ai_predictions)
+
+
+
 
 
 @app.route("/products")
