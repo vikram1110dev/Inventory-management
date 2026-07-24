@@ -233,3 +233,19 @@ def get_all_suppliers():
     rows = cursor.fetchall()
     conn.close()
     return rows
+
+
+def get_product_velocity():
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT p.ProductId, p.ProductName, p.Category, p.Quantity, p.Price,
+               COALESCE(SUM(t.QuantityChanged), 0) as TotalMovement,
+               COUNT(t.TransactionId) as TxCount
+        FROM Products p
+        LEFT JOIN Transactions t ON p.ProductId = t.ProductId
+        GROUP BY p.ProductId, p.ProductName, p.Category, p.Quantity, p.Price
+    """)
+    rows = cursor.fetchall()
+    conn.close()
+    return rows
