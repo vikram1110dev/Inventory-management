@@ -1,0 +1,173 @@
+{% extends "layout.html" %}
+{% block title %}Supplier: {{ summary.supplier_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 style="display: flex; align-items: center; gap: 12px;">
+            <a href="/suppliers" style="color: var(--text-muted); font-size: 20px; text-decoration: none;" title="Back to Suppliers">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+            <i class="fa-solid fa-building-user" style="color: var(--primary);"></i> {{ summary.supplier_name }}
+        </h1>
+        <p class="subtitle">Detailed inventory analytics, supplied products, and stock valuation breakdown.</p>
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <a href="/export/supplier/{{ summary.supplier_name }}" class="btn btn-outline" style="gap: 8px;"><i class="fa-solid fa-file-csv"></i> Download CSV Report</a>
+        <a href="/suppliers" class="btn btn-outline"><i class="fa-solid fa-arrow-left"></i> Back to Suppliers</a>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon bg-blue"><i class="fa-solid fa-box"></i></div>
+        <div class="stat-info">
+            <h3>Supplied Products</h3>
+            <p>{{ summary.total_products }} Items</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon bg-green"><i class="fa-solid fa-boxes-stacked"></i></div>
+        <div class="stat-info">
+            <h3>Total Stock Quantity</h3>
+            <p>{{ "{:,}".format(summary.total_quantity) }} Units</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon bg-warning"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+        <div class="stat-info">
+            <h3>Total Inventory Value</h3>
+            <p>₹{{ "{:,.2f}".format(summary.total_value) }}</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon bg-danger"><i class="fa-solid fa-tag"></i></div>
+        <div class="stat-info">
+            <h3>Average Unit Price</h3>
+            <p>₹{{ "{:,.2f}".format(summary.avg_price) }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- Supplier Product Graphs -->
+<div class="dashboard-charts" style="grid-template-columns: 1fr 1fr; margin-top: 24px;">
+    <div class="chart-card">
+        <h2>Stock Quantity by Product</h2>
+        <div class="chart-container">
+            <canvas id="supplierQtyChart"></canvas>
+        </div>
+    </div>
+    <div class="chart-card">
+        <h2>Inventory Value Share by Product</h2>
+        <div class="chart-container">
+            <canvas id="supplierValueChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Products Table -->
+<div class="card" style="margin-top: 24px;">
+    <div class="card-header" style="padding: 20px 24px; border-bottom: 1px solid var(--border);">
+        <h2 style="font-size: 18px; margin: 0;"><i class="fa-solid fa-layer-group" style="color: var(--primary); margin-right: 8px;"></i> Products Supplied by {{ summary.supplier_name }}</h2>
+    </div>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Product ID</th>
+                    <th>Product Name</th>
+                    <th>Category</th>
+                    <th>Unit Price (₹)</th>
+                    <th>Stock Quantity</th>
+                    <th>Total Value (₹)</th>
+                    <th>Stock Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in products %}
+                <tr>
+                    <td><code>#{{ p[0] }}</code></td>
+                    <td><strong>{{ p[1] }}</strong></td>
+                    <td><span class="badge" style="background: rgba(59,130,246,0.1); color: var(--primary);">{{ p[2] }}</span></td>
+                    <td>₹{{ "{:,.2f}".format(p[3]) }}</td>
+                    <td><strong>{{ p[4] }}</strong></td>
+                    <td><strong>₹{{ "{:,.2f}".format(p[5]) }}</strong></td>
+                    <td>
+                        {% if p[4] <= 0 %}
+                            <span class="badge badge-danger">Out of Stock</span>
+                        {% elif p[4] < 10 %}
+                            <span class="badge badge-warning">Low Stock</span>
+                        {% else %}
+                            <span class="badge badge-success">In Stock</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted">No products found for this supplier.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const productNames = {{ product_names | tojson }};
+    const productQtys = {{ product_qtys | tojson }};
+    const productValues = {{ product_values | tojson }};
+    
+    const palette = [
+        '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', 
+        '#06b6d4', '#ec4899', '#84cc16', '#f97316', '#6366f1', '#d946ef'
+    ];
+    const bgColors = productNames.map((_, i) => palette[i % palette.length]);
+
+    // Quantity Bar Chart
+    const ctx1 = document.getElementById('supplierQtyChart').getContext('2d');
+    new Chart(ctx1, {
+        type: 'bar',
+        data: {
+            labels: productNames,
+            datasets: [{
+                label: 'Stock Quantity',
+                data: productQtys,
+                backgroundColor: bgColors,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+
+    // Value Doughnut Chart
+    const ctx2 = document.getElementById('supplierValueChart').getContext('2d');
+    new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+            labels: productNames,
+            datasets: [{
+                data: productValues,
+                backgroundColor: bgColors,
+                borderWidth: 0,
+                hoverOffset: 4,
+                cutout: '70%'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { color: '#a1a1aa', padding: 16, font: { family: 'Inter', size: 12 } } }
+            }
+        }
+    });
+</script>
+{% endblock %}

@@ -248,4 +248,36 @@ def get_product_velocity():
     """)
     rows = cursor.fetchall()
     conn.close()
-    return rows
+    return rows
+
+
+def get_supplier_details(supplier_name):
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+        SELECT ProductId, ProductName, Category, Price, Quantity, (Price * Quantity) as TotalValue
+        FROM Products
+        WHERE Supplier = ?
+        ORDER BY Quantity DESC
+    """, (supplier_name,))
+    products = cursor.fetchall()
+    
+    cursor.execute("""
+        SELECT COUNT(ProductId), SUM(Quantity), SUM(Price * Quantity), AVG(Price)
+        FROM Products
+        WHERE Supplier = ?
+    """, (supplier_name,))
+    summary_row = cursor.fetchone()
+    
+    conn.close()
+    
+    summary = {
+        "supplier_name": supplier_name,
+        "total_products": summary_row[0] if summary_row and summary_row[0] else 0,
+        "total_quantity": summary_row[1] if summary_row and summary_row[1] else 0,
+        "total_value": float(summary_row[2]) if summary_row and summary_row[2] else 0.0,
+        "avg_price": float(summary_row[3]) if summary_row and summary_row[3] else 0.0
+    }
+    return summary, products
+

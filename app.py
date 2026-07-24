@@ -20,7 +20,8 @@ from db import (
     get_all_categories,
     get_all_suppliers,
     get_all_transactions,
-    get_product_velocity
+    get_product_velocity,
+    get_supplier_details
 )
 from google import genai
 from google.genai import types
@@ -179,7 +180,6 @@ def dashboard():
     stats = get_dashboard_stats()
     transactions = get_recent_transactions()
     categories = get_all_categories()
-    ai_predictions = get_ai_predictions_data()
     
     category_labels = [cat[0] for cat in categories]
     category_data = [float(cat[2]) if cat[2] is not None else 0.0 for cat in categories]
@@ -192,8 +192,7 @@ def dashboard():
         categories=categories,
         category_labels=category_labels,
         category_data=category_data,
-        category_qty=category_qty,
-        ai_predictions=ai_predictions
+        category_qty=category_qty
     )
 
 
@@ -278,7 +277,53 @@ def categories_page():
 @app.route("/suppliers")
 def suppliers_page():
     suppliers = get_all_suppliers()
-    return render_template("suppliers.html", suppliers=suppliers)
+    supplier_names = [s[0] for s in suppliers]
+    supplier_products = [int(s[1]) if s[1] is not None else 0 for s in suppliers]
+    supplier_values = [float(s[2]) if s[2] is not None else 0.0 for s in suppliers]
+    
+    return render_template(
+        "suppliers.html", 
+        suppliers=suppliers,
+        supplier_names=supplier_names,
+        supplier_products=supplier_products,
+        supplier_values=supplier_values
+    )
+
+
+@app.route("/suppliers/<path:name>")
+def supplier_detail_page(name):
+    summary, products = get_supplier_details(name)
+    product_names = [p[1] for p in products]
+    product_qtys = [int(p[4]) if p[4] is not None else 0 for p in products]
+    product_values = [float(p[5]) if p[5] is not None else 0.0 for p in products]
+    
+    return render_template(
+        "supplier_detail.html",
+        summary=summary,
+        products=products,
+        product_names=product_names,
+        product_qtys=product_qtys,
+        product_values=product_values
+    )
+
+
+@app.route("/api/supplier/<path:name>")
+def api_supplier_detail(name):
+    summary, products = get_supplier_details(name)
+    product_list = [{
+        "id": p[0],
+        "name": p[1],
+        "category": p[2],
+        "price": float(p[3]) if p[3] is not None else 0.0,
+        "quantity": p[4],
+        "total_value": float(p[5]) if p[5] is not None else 0.0
+    } for p in products]
+    
+    return jsonify({
+        "summary": summary,
+        "products": product_list
+    })
+
 
 
 @app.route("/history")
@@ -309,6 +354,38 @@ def export_data():
         mimetype="text/csv",
         headers={"Content-Disposition": "attachment;filename=inventory_report.csv"}
     )
+
+
+@app.route("/export/supplier/<path:name>")
+def export_supplier_report(name):
+    summary, products = get_supplier_details(name)
+    
+    si = StringIO()
+    cw = csv.writer(si)
+    
+    cw.writerow(['SUPPLIER REPORT', name])
+    cw.writerow(['Total Products Supplied', summary['total_products']])
+    cw.writerow(['Total Stock Quantity', summary['total_quantity']])
+    cw.writerow(['Total Inventory Value (INR)', f"{summary['total_value']:.2f}"])
+    cw.writerow(['Average Product Unit Price (INR)', f"{summary['avg_price']:.2f}"])
+    cw.writerow([])
+    
+    cw.writerow(['Product ID', 'Product Name', 'Category', 'Price (INR)', 'Stock Quantity', 'Total Inventory Value (INR)', 'Stock Status'])
+    
+    for p in products:
+        qty = p[4]
+        status = "Out of Stock" if qty <= 0 else ("Low Stock" if qty < 10 else "In Stock")
+        cw.writerow([p[0], p[1], p[2], f"{p[3]:.2f}", p[4], f"{p[5]:.2f}", status])
+        
+    output = si.getvalue()
+    safe_filename = name.replace(' ', '_').replace('/', '_')
+    
+    return Response(
+        output,
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment;filename=Supplier_Report_{safe_filename}.csv"}
+    )
+
 
 
 @app.route("/api/chat", methods=["POST"])
